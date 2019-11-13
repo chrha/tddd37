@@ -353,7 +353,7 @@ constraint ci_fk1 foreign key(supplier) references jbsupplier(id),
 constraint ci_fk2 foreign key(dept) references jbdept(id) );
 
 insert into ciitem select * from jbitem where price < (select avg(price) from jbitem);
-/output
+/*output
 Query OK, 14 rows affected (0.00 sec)
 Records: 14  Duplicates: 0  Warnings: 0*/
 
