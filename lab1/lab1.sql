@@ -490,23 +490,23 @@ key constraint fails (`iliay038`.`ciitem`, CONSTRAINT `ci_fk1` FOREIGN KEY (`sup
 REFERENCES `jbsupplier` (`id`))
 */
 
+/*Then we drop our own table since it was conflicting*/
+drop table ciitem;
+
 /*Then we identified all relations connected and removed related item from jbsale:*/
 
-delete from jbsale where item in (select jbsale.item 
-from jbsale inner join jbitem on jbsale.item = jbitem.id 
-inner join jbsupplier on jbitem.supplier = jbsupplier.id 
+delete from jbsale where item in (select jbitem.id from
+jbitem inner join jbsupplier on jbitem.supplier = jbsupplier.id 
 where jbsupplier.city in ( select id from jbcity where name = 'Los Angeles'));
-
 
 
 /*Then we removed the items from jbitem: */
 
-delete from jbitem where id in (select jbitem.id 
-from jbitem inner join jbsupplier on jbitem.supplier = jbsupplier.id 
+delete from jbitem where supplier in (select jbsupplier.id
+from jbsupplier 
 where jbsupplier.city in ( select id from jbcity where name='Los Angeles'));
 
-/*Then we drop our own table since it was conflicting*/
-drop table ciitem;
+
 
 /*Lastly we did the first query:*/
 
