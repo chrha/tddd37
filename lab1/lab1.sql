@@ -482,7 +482,7 @@ Question 18, output
 Question 19a, Remove all suppliers in Los Angeles from the table jbsupplier
 */
 
-/*delete from jbsupplier where city in (select id from jbcity where name='Los Angeles');
+/*delete from jbsupplier where city in (select id from jbcity where name='Los Angeles');*/
 
 /* output
 ERROR 1451 (23000): Cannot delete or update a parent row: a foreign 
