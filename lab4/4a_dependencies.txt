@@ -5,7 +5,8 @@ Airport:
     candidatekeys: airportcode,airportname
     primarykeys: airportcode
     Normal form: 2NF, since we felt that breaking up airportname with country would not serve any significant purpose. 
-    One could separate airportname and country in another table with airportname as a primary key. However we do not know if airportname should be unique, 
+    One could separate airportname and country in another table with airportname as a primary key. 
+    However we do not know if airportname should be unique, 
     since logically speaking airports in different countries can have the same name.
 
 Route:
@@ -67,7 +68,8 @@ Passenger:
     ssn-> passportnumber
     candidate keys: ssn, passportnumber
     primary key:ssn
-    Normal form: 3NF, we did it like this since we didnt want the Person entity to be forced to have a passportnumber since a person can pay for the booking without being a passenger,
+    Normal form: 3NF, we did it like this since we didnt want the Person entity to be forced to 
+    have a passportnumber since a person can pay for the booking without being a passenger,
     which means that particular person wouldn't need to share passport information.
     
     
@@ -93,4 +95,5 @@ Card_information:
     cardnumber->ssn
     Candidate keys: {ssn,reservationnumber}
     Primary keys: {ssn,reservationnumber}
-    Normal form: 3NF, The cardnumbers can pinpoint the person owning the card, but similar motivation to the passenger entity we dont want to have the cardinformation in the Person entity.
+    Normal form: 3NF, The cardnumbers can pinpoint the person owning the card, 
+    but similar motivation to the passenger entity we dont want to have the cardinformation in the Person entity.
