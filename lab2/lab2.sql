@@ -54,5 +54,76 @@ where id in (select manager from jbdept);
 
 
 
+/*
+Question 5
+*/
+
+
+create table jbcustomer(
+	id integer,
+	name char,
+	address char,
+	city integer,
+	constraint pk_cust
+		primary key(id),
+	constraint fk_cust_city
+		foreign key(city) references jbcity(id)
+);
+
+create table jbaccount(
+	account_number integer,
+	balance integer,
+	owner integer,
+	constraint pk_acc
+		primary key(account_number),
+	constraint fk_acc_cust
+		foreign key(owner) references jbcustomer(id)
+
+
+);
+
+create table jbtransaction(
+	transaction_number integer,
+	sdate timestamp NOT NULL DEFAULT current_timestamp(),
+	employee integer,
+	account_number integer,
+	constraint pk_trans
+		primary key(transaction_number),
+	constraint fk_trans_emp
+		foreign key(employee) references jbemployee(id),
+	constraint fk_trans_acc
+		foreign key(account_number) references jbaccount(account_number)
+
+);
+
+
+
+alter table jbdebit drop foreign key fk_debit_employee;
+alter table jbdebit drop column sdate;
+alter table jbdebit drop column employee;
+alter table jbdebit drop column account;
+alter table jbdebit add constraint fk_debit_trans foreign key(id) references jbtransaction(transaction_number);
+
+
+
+create table jbdeposit(
+	deposit_number integer,
+	amount integer,
+	constraint pk_depo	
+		primary key(deposit_number),
+	constraint fk_depo_trans
+		foreign key(deposit_number) references jbtransaction(transaction_number)
+
+);
+
+create table jbwithdrawal(
+	withdrawal_number integer,
+	amount integer,
+	constraint pk_withd	
+		primary key(withdrawal_number),
+	constraint fk_withd_trans
+		foreign key(withdrawal_number) references jbtransaction(transaction_number)
+
+);
 
 
