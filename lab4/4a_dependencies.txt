@@ -17,12 +17,9 @@ Route:
     Normal form: BCNF
 
 
-
-
-
 schedual_weekly:
     Functional dependencies:
-    id-> year, departure_time, route,day
+    id-> year, departure_time, route, day
     candidate keys: id
     primary keys: id
     Normal form: BCNF
@@ -34,9 +31,16 @@ weekday:
     primary keys: day
     Normal form: BCNF
 
+year:
+    Functional dependencies:
+    year-> profitfactor 
+    candidate keys: year
+    primary keys: year
+    Normal form: BCNF
+
 Flight:
     Functional dependencies:
-    flightnumber -> bookedpassangers, week,time
+    flightnumber -> week, time
     Candidate keys: flightnumber
     Primary keys: flightnumber
     Normal form: BCNF
@@ -51,49 +55,29 @@ Reservation:
 Reservation_list
     Functional dependencies:
     trivial
-    Candidate keys: {ssn,reservation}
-    Primary keys: {ssn,reservation}
+    Candidate keys: {passportnumber,reservation}
+    Primary keys: {passportnumber,reservation}
     Normal form: BCNF
 
 
-Person:
-    Functional dependencies:
-    ssn->name
-    Candidate keys: ssn
-    Primary keys: ssn
-    Normal form:BCNF
-
 Passenger:
     Functional dependencies:
-    ssn-> passportnumber
-    candidate keys: ssn, passportnumber
-    primary key:ssn
-    Normal form: 3NF, we did it like this since we didnt want the Person entity to be forced to 
-    have a passportnumber since a person can pay for the booking without being a passenger,
-    which means that particular person wouldn't need to share passport information.
-    
+    passportnumber-> name
+    candidate keys: passportnumber
+    primary key:passportnumber
+    Normal form: BCNF
     
 
 Booking
     Functional dependencies:
-    reservationnumber -> price, profitfactor,contactperson
+    reservationnumber -> contactperson,cardnumber
     Candidate keys: reservationnumber
     Primary keys: reservationnumber
     Normal form: BCNF
 
 Contact:
     Functional dependencies:
-    ssn-> phone_nr, emailadress
-    Candidate keys: ssn
-    Primary keys:ssn
-    Normal form: BCNF
-
-
-Card_information:
-    Functional dependencies:
-    ssn,reservationnumber-> cardnumber
-    cardnumber->ssn
-    Candidate keys: {ssn,reservationnumber}
-    Primary keys: {ssn,reservationnumber}
-    Normal form: 3NF, The cardnumbers can pinpoint the person owning the card, 
-    but similar motivation to the passenger entity we dont want to have the cardinformation in the Person entity.
+    passportnumber,phone_nr, emailadress-> passportnumber,phone_nr, emailadress
+    Candidate keys: passportnumber, phone_nr, emailadress
+    Primary keys: passportnumber
+    Normal form: BCNF (only trivial depencencies)
