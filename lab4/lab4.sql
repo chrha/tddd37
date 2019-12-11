@@ -1,24 +1,25 @@
-
-
 /*Drop existing tables and procedures */
 SET FOREIGN_KEY_CHECKS = 0;
-drop table airport;
-drop table year;
-drop table weekday;
-drop table route;
-drop table schedual_weekly;
-drop table flight;
-drop table reservation;
-drop table reservation_list;
-drop table contact;
-drop table booking;
-drop table passenger;
+drop table if exists airport;
+drop table if exists year;
+drop table if exists weekday;
+drop table if exists route;
+drop table if exists schedual_weekly;
+drop table if exists flight;
+drop table if exists reservation;
+drop table if exists reservation_list;
+drop table if exists contact;
+drop table if exists booking;
+drop table if exists passenger;
 
 SET FOREIGN_KEY_CHECKS = 1;
+drop procedure if exists addYear;
+drop procedure if exists addDay;
+drop procedure if exists addDestination;
+drop procedure if exists addRoute;
+drop procedure if exists addFlight;
 
-
-
-/*
+/*"
 Creating relevant tables and foreign keys
 */
 
@@ -44,32 +45,38 @@ create table year(
 
 create table weekday(
  day VARCHAR(10),
+ year integer,
  wekdayfactor double,
  	
  constraint pk_weekday_day
-	primary key(day)	
+	primary key(day),
+ constraint fk_weekday_year
+	foreign key(year) references year(year)	
 );
 
 create table route(
- id integer,
- routeprice double,
  arrival varchar(3),
  departure varchar(3),
- 
+ year integer,
+ routeprice double,
+
  constraint pk_route_id
-    primary key(id),
+    primary key(arrival,departure),
  constraint fk_route_arrival
 	foreign key(arrival) references airport(airportcode),
  constraint fk_route_departure
-	foreign key(departure) references airport(airportcode)
+	foreign key(departure) references airport(airportcode),
+ constraint fk_route_year
+	foreign key (year) references year(year)
 );
 
 create table schedual_weekly(
- id integer,
+ id integer not NULL auto_increment,
  year integer,
  day varchar(30),
  departure_time time,
- route integer,
+ arrival varchar(3),
+ departure varchar(3),
 
  constraint pk_sch_week
 	primary key (id),
@@ -81,12 +88,12 @@ create table schedual_weekly(
 	foreign key (day) references weekday(day),
 
  constraint fk_sch_route
-	foreign key (route) references route(id)
+	foreign key (arrival,departure) references route(arrival,departure)
 );
 
 
 create table flight(
- flightnumber integer,
+ flightnumber integer not NULL auto_increment,
  week integer,
  time integer,
 
@@ -152,5 +159,77 @@ create table booking(
 	foreign key(contact) references contact(passportnumber)
 
 );
+
+delimiter //
+create procedure addYear(in year int, in profit double) 
+begin 
+insert into year values(year,profit);
+end //
+
+create procedure addDay(in year int,in day VARCHAR(10),in factor double)
+begin
+insert into weekday values(day,year,factor);
+end //
+
+create procedure addDestination(in airport_code varchar(3),in name varchar(30), in country varchar(30))
+begin
+insert into airport values(airport_code,name,country);
+end //
+
+create procedure addRoute(in departure varchar(3),in arrival varchar(3),in year int, in routeprice double)
+begin
+insert into route values(arrival,departure,year,routeprice);
+end //
+
+create procedure addFlight(in departure varchar(3),in arrival varchar(3),in year int,in day varchar(10), in departure_time time)
+begin
+
+declare schedual_id int;
+declare week INT default 1;
+
+insert into schedual_weekly (year,day,departure_time,arrival,departure) 
+values(year,day,departure_time,arrival,departure);
+set schedual_id = last_insert_id();
+
+  while week <= 52 do
+    insert into flight(week,time) values(week,schedual_id);
+    set week = week + 1;
+  end while;
+end //
+
+
+
+delimiter ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
