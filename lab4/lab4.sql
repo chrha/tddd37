@@ -19,6 +19,8 @@ drop procedure if exists addDestination;
 drop procedure if exists addRoute;
 drop procedure if exists addFlight;
 
+drop function if exists calculatePrice;
+drop function if exists calculateFreeSeats;
 /*"
 Creating relevant tables and foreign keys
 */
@@ -46,7 +48,7 @@ create table year(
 create table weekday(
  day VARCHAR(10),
  year integer,
- wekdayfactor double,
+ weekdayfactor double,
  	
  constraint pk_weekday_day
 	primary key(day),
@@ -61,7 +63,7 @@ create table route(
  routeprice double,
 
  constraint pk_route_id
-    primary key(arrival,departure),
+    primary key(arrival,departure,year),
  constraint fk_route_arrival
 	foreign key(arrival) references airport(airportcode),
  constraint fk_route_departure
@@ -128,6 +130,7 @@ create table passenger(
 create table reservation_list(
  passportnumber integer,
  reservation integer,
+ ticketnumber integer default null,
  
  constraint fk_res_pass
 	foreign key(passportnumber) references passenger(passportnumber),
@@ -197,39 +200,50 @@ set schedual_id = last_insert_id();
   end while;
 end //
 
+create function calculateFreeSeats(flight_number integer)
+returns integer
+begin
+declare bookedseats integer;
+select count(*) into bookedseats from reservation_list where reservation in 
+	(select reservationnumber from booking where reservationnumber in
+	(select reservationnumber from reservation where flight = flight_number));
+return (60 - bookedseats);
 
+end //
+
+create function calculatePrice(flight_number integer)
+returns double
+begin
+declare weekday_factor double;
+declare bookedseats integer;
+declare profit_factor double;
+declare route_price double;
+
+select count(*) into bookedseats from reservation_list where reservation in 
+	(select reservationnumber from booking where reservationnumber in
+	(select reservationnumber from reservation where flightnumber = flight_number));
+
+select weekdayfactor into weekday_factor from weekday where day in 
+	(select day from schedual_weekly where id in
+	(select time from flight where flightnumber = flight_number));
+
+
+select profitfactor into profit_factor from year where year in 
+	(select year from schedual_weekly where id in
+	(select time from flight where flightnumber = flight_number));
+
+select routeprice into route_price from route where (arrival,departure,year) in 
+	(select (arrival,departure,year) from schedual_weekly where id in
+	(select time from flight where flightnumber = flight_number));
+
+return route_price*weekday_factor*((bookedseats+1)/40)*profit_factor;
+end //
 
 delimiter ;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+CREATE TRIGGER generateTicket
+AFTER INSERT ON booking
+for each row
+update reservation_list set ticketnumber = CAST(RAND() * 1000000 AS INT) where reservation = 
+last_insert_id();
 
 
