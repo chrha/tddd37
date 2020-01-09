@@ -1,0 +1,55 @@
+8.a
+You can hash the creditcard values so that it is not stored as clear text
+
+8.b
+One important aspect would be abstraction, so that the upper layer would not need to know about the database to do simple operations.
+
+This also protects against sql injections in the frontend.
+
+Here are three more reasons mentioned in the lectures:
+-reduced duplication of effort if database is used by other applications
+- reduces data transfer and communication cost
+-can be used to check for complex constraints.
+
+9.b
+It is not visible in session B, since we have not commited it in session A and thus it has yet to make the changes in the database.
+
+9.c
+B can not change reservations from A since A is executing in isolation. B can only change the reservation after A is finished and have commited.
+
+it is related to isoloation of transaction in the sense that B can only change after A is done, which essentially grants an isolation property to A for it to finish.
+
+10.a
+No overbooking occurs. since in the first instance creates the contact for the reservation. The other instance cant create the same contact with different reservationnumber since the contact primary key is it's passportnumber.This leads to the second instance not being able to assign a contact to the reservation and thus unable to pay for the flight. Therefore no overbooking occurs. 
+OBS: WE MADE ANOTHER TESTSCRIPT IDENTICAL TO MAKEBOOKING EXCEPT FOR THE CONTACT. When booking with a new contact, overbooking did occur.
+10.b
+
+Yes,it can occur. In the following procedure in our code, should the second instance go through the if statement before the first instance finish the insert, then an overbooking might occur.
+
+create procedure addPayment (in reservation_nr integer,in cardholder_name varchar(30),in credit_card_number bigint)
+begin 
+.
+.
+.
+
+
+	if (exists(select * from contact where reservationnr=reservation_nr) and nr_free >= nr_pass)
+	then insert into booking(reservationnumber,cardnumber) values(reservation_nr,credit_card_number);
+	else
+	delete from reservation_list where reservation= reservation_nr;
+	delete from contact where reservationnr=reservation_nr;
+	delete from reservation where reservationnumber=reservation_nr; 
+	SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'There are not enough seats available on the flight anymore, deleting reservation ';
+	end if;
+end //
+
+
+10.c
+overbooking occurs all the time.
+10.d
+We simply lock before our payment precedure and unlock after.
+
+
+
+
+
