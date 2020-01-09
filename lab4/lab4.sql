@@ -27,6 +27,7 @@ drop function if exists calculatePrice;
 drop function if exists calculateFreeSeats;
 
 drop view if exists allFlights;
+drop view if exists temp;
 /*"
 Creating relevant tables and foreign keys
 */
@@ -174,27 +175,27 @@ create table booking(
 );
 
 delimiter //
-/* addYear*/
+/* ----*/
 create procedure addYear(in year int, in profit double) 
 begin 
 insert into year values(year,profit);
 end //
-/* addDay*/
+/* -------*/
 create procedure addDay(in year int,in day VARCHAR(10),in factor double)
 begin
 insert into weekday values(day,year,factor);
 end //
-/* addDestination*/
+/* ----------*/
 create procedure addDestination(in airport_code varchar(3),in name varchar(30), in country varchar(30))
 begin
 insert into airport values(airport_code,name,country);
 end //
-/* addRoute*/
+/* --------*/
 create procedure addRoute(in departure varchar(3),in arrival varchar(3),in year int, in routeprice double)
 begin
 insert into route values(arrival,departure,year,routeprice);
 end //
-/* addRoute*/
+/* -------*/
 create procedure addFlight(in departure varchar(3),in arrival varchar(3),in year int,in day varchar(10), in departure_time time)
 begin
 
@@ -212,13 +213,13 @@ set schedual_id = last_insert_id();
 end //
 
 
-/* addRoute*/
+/* ---------*/
 
 create procedure addReservation(in departure_in varchar(3),in arrival_in varchar(3), in year_in int,in week_in int, in day_in varchar(10), in time_in time, in number_of_passengers int,out output_reservation_nr int)
 begin
 	declare flightnr int;
 
-	select flightnumber into flightnr from flight inner join schedual_weekly on flight.time= 		  schedual_weekly.id where flight.week=week_in and schedual_weekly.departure=departure_in and 
+	select flightnumber into flightnr from flight inner join schedual_weekly on flight.time= schedual_weekly.id where flight.week=week_in and schedual_weekly.departure=departure_in and 
 		schedual_weekly.arrival=arrival_in and schedual_weekly.year=year_in and schedual_weekly.day=day_in
 		and schedual_weekly.departure_time = time_in;
 
@@ -228,7 +229,7 @@ begin
 	end if;
 end //
 
-/* addRoute*/
+/* -------*/
 
 create procedure addPassenger(in reservation_nr integer,in passport_number int, in name varchar(30))
 begin
@@ -248,7 +249,7 @@ begin
 end //
 
 
-/* addRoute*/
+/* ------*/
 
 create procedure addContact(in reservation_nr int,in passport_number int,in email varchar(30),in phone bigint)
 begin
@@ -258,17 +259,20 @@ begin
 	if(not exists(select * from passenger where passportnumber=passport_number))
 	then SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'The person is not a passenger of the reservation';
 	end if;
-	insert into 	 contact(passportnumber,phonenumber,emailadress,reservationnr) values(passport_number,phone,email,reservation_nr);
+	insert into contact(passportnumber,phonenumber,emailadress,reservationnr) values(passport_number,phone,email,reservation_nr);
 end //
 
 
-/* addRoute*/
+/* --------*/
 
 create procedure addPayment (in reservation_nr integer,in cardholder_name varchar(30),in credit_card_number bigint)
 begin 
 declare nr_pass int;
 declare nr_free int;
 declare flight int;
+if(exists(select * from booking where reservationnumber=reservation_nr))
+	then SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'The given reservation has already been payed for';
+	end if;
 if(not exists(select * from reservation where reservationnumber=reservation_nr))
 	then SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'The given reservation number does not exist';
 	end if;
@@ -281,7 +285,7 @@ select calculateFreeSeats(flight) into nr_free;
 select count(*) into nr_pass from reservation_list where reservation = reservation_nr;
 
 
-	if (exists(select * from contact where reservationnr=reservation_nr) and nr_free >= nr_pass)
+	if (nr_free >= nr_pass)
 	then insert into booking(reservationnumber,cardnumber) values(reservation_nr,credit_card_number);
 	else
 	delete from reservation_list where reservation= reservation_nr;
@@ -291,7 +295,7 @@ select count(*) into nr_pass from reservation_list where reservation = reservati
 	end if;
 end //
 
-/* addRoute*/
+/* --------*/
 
 create function calculateFreeSeats(flight_number integer)
 returns integer
@@ -304,16 +308,15 @@ return (40 - bookedseats);
 
 end //
 
-/* addRoute*/
+/* --------*/
 
 create function calculatePrice(flight_number integer)
-returns double
+returns float 
 begin
 declare weekday_factor double;
 declare bookedseats integer;
 declare profit_factor double;
 declare route_price double;
-
 select count(*) into bookedseats from reservation_list where reservation in 
 	(select reservationnumber from booking where reservationnumber in
 	(select reservationnumber from reservation where flight = flight_number));
@@ -327,27 +330,38 @@ select profitfactor into profit_factor from year where year in
 	(select year from schedual_weekly where id in
 	(select time from flight where flightnumber = flight_number));
 
-select routeprice into route_price from route where (arrival,departure,year) in 
-	(select (arrival,departure,year) from schedual_weekly where id in
-	(select time from flight where flightnumber = flight_number));
+select routeprice into route_price from route inner join schedual_weekly on (schedual_weekly.arrival,schedual_weekly.departure,schedual_weekly.year)= (route.arrival,route.departure,route.year) where schedual_weekly.id in
+	(select time from flight where flightnumber = flight_number);
 
 return route_price*weekday_factor*((bookedseats+1)/40)*profit_factor;
 end //
 
 delimiter ;
+
+/* --------*/
+
 CREATE TRIGGER generateTicket
 AFTER INSERT ON booking
 for each row
 update reservation_list set ticketnumber = CAST(RAND() * 1000000 AS INT) where reservation = 
 last_insert_id();
 
-create view allFlights as
-select departure.airportname as departure_city_name,arrival.airportname as destination_city_name,schedual_weekly.departure_time,schedual_weekly.day as departure_day,flight.week as departure_week, schedual_weekly.year as departure_year
-from (flight inner join schedual_weekly on time=id) inner join route on (route.arrival,route.departure)=(schedual_weekly.arrival,schedual_weekly.departure) inner join airport as arrival on arrival.airportcode= route.arrival inner join airport as departure on departure.airportcode=route.departure;
+/* --------*/
 
-/*
-departure.airportname as departure_city_name,arrival.airportname as destination_city_name,schedual_weekly.departure_time,schedual_weekly.day as departure_day,flight.week as departure_week, schedual_weekly.year as departure_year, calculateFreeSeats(flight.flightnumber) as nr_of_free_seats,calculatePrice(flight.flightnumber)as current_price_per_seat
-*/
+create view temp as
+select departure.airportname as departure_city_name,arrival.airportname as destination_city_name,schedual_weekly.departure_time,schedual_weekly.day as departure_day,flight.week as departure_week, schedual_weekly.year as departure_year
+, calculateFreeSeats(flight.flightnumber) as nr_of_free_seats,calculatePrice(flight.flightnumber)as current_price_per_seat
+from (flight inner join schedual_weekly on time=id) inner join route on route.arrival=schedual_weekly.arrival
+and route.departure=schedual_weekly.departure  
+inner join airport as arrival on arrival.airportcode= route.arrival inner join airport as departure on departure.airportcode=route.departure;
+
+/* --------*/
+
+create view allFlights as
+select distinct * from temp;
+
+
+
 
 
 
