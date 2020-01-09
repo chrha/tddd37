@@ -50,6 +50,9 @@ overbooking occurs all the time.
 We simply lock before our payment precedure and unlock after.
 
 
+SECONDARY INDEX
+One could use secondary index when accesing all flights during one week. Where each week points to all flights during that week.
+
 
 
 
