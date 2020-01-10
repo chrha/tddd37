@@ -152,7 +152,7 @@ create table contact(
  reservationnr integer,
 
  constraint pk_con_pass
-	primary key(passportnumber),
+	primary key(passportnumber,reservationnr),
 
  constraint fk_con_pass
 	foreign key(passportnumber) references passenger(passportnumber),
@@ -259,7 +259,10 @@ begin
 	if(not exists(select * from passenger where passportnumber=passport_number))
 	then SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'The person is not a passenger of the reservation';
 	end if;
-	insert into contact(passportnumber,phonenumber,emailadress,reservationnr) values(passport_number,phone,email,reservation_nr);
+	insert into contact(passportnumber,phonenumber,emailadress,reservationnr) values(passport_number,phone,email,reservation_nr)
+ON DUPLICATE KEY UPDATE
+reservationnr = reservation_nr;
+
 end //
 
 
@@ -270,6 +273,7 @@ begin
 declare nr_pass int;
 declare nr_free int;
 declare flight int;
+declare free_seats int;
 if(exists(select * from booking where reservationnumber=reservation_nr))
 	then SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'The given reservation has already been payed for';
 	end if;
@@ -284,8 +288,10 @@ select flight into flight from reservation where reservationnumber = reservation
 select calculateFreeSeats(flight) into nr_free;
 select count(*) into nr_pass from reservation_list where reservation = reservation_nr;
 
+SELECT nr_of_free_seats from allFlights where departure_week = 1 into free_seats;
 
-	if (nr_free >= nr_pass)
+	select sleep(2);	
+	if (free_seats >= nr_pass)
 	then insert into booking(reservationnumber,cardnumber) values(reservation_nr,credit_card_number);
 	else
 	delete from reservation_list where reservation= reservation_nr;
